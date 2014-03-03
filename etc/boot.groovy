@@ -18,7 +18,6 @@ def waitList = [ "org.quartz-scheduler.quartz": false ]
  * The body of bootup work
  */
 def doBootStep() {
-	try {
         def binding = new Binding();
         // BundleContextを "ctx" としてセット
         binding.setVariable("ctx", ctx);
@@ -33,17 +32,13 @@ def doBootStep() {
         java.lang.System.setProperty("groovy.home", homedir);
 
         URL [] scriptpath123 = [new File(homedir + "/" + "lib/groovy/libs.common").toURL(),new File(homedir + "/" + "lib/groovy/libs.target").toURL()]
-        RootLoader rootloader = new RootLoader(scriptpath123, this.getClass().getClassLoader())
+        RootLoader rootloader = new RootLoader(scriptpath123, Thread.currentThread().contextClassLoader)
 
         // Loaderに渡す為のGroovyShell
         def shell = new GroovyShell(rootloader,binding)
 		def terracottaPrototype = rootloader.loadClass("Terracotta_Prototype").newInstance()
-	} catch (Exception ex) {
-		println "Exception:"
-		println ex
-	}
 //        def jettyLoader = new JettyLoader(ctx)
-        /*def jettyLoader = rootloader.loadClass("JettyLoader").newInstance([ctx] as Object[] )
+        def jettyLoader = rootloader.loadClass("JettyLoader").newInstance([ctx] as Object[] )
 
         // IST_HOME/lib/groovy の直下のgroovyファイルを自動でロードするLoader
 //        def loader = new DefaultLoader(ctx, shell)
@@ -62,7 +57,7 @@ def doBootStep() {
         // OSGi serviceに渡すproperty
         def props_jobsvc = new java.util.Hashtable(props);
         // 監視系ジョブ専用loaderをdirectory-watcherとして登録(未実装)
-        ctx.registerService(clsListener.getName(), jobLoader, props_jobsvc)*/
+        ctx.registerService(clsListener.getName(), jobLoader, props_jobsvc)
 }
 
 /**
