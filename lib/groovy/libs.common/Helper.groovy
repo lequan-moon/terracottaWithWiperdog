@@ -82,20 +82,18 @@ class Helper {
 					println "---job doesn't exist"
 				}
 			}
-		}
-		if(trigger != null){
-			if(!sched.checkExists(trigger.getKey())){
-				println "---Trigger doesn't exist"
-				sched.scheduleJob(trigger)
-			}else{
-				println "---Trigger exists"
-				sched.unscheduleJob(trigger.getKey())
-				sched.scheduleJob(trigger)
+			if(trigger != null){
+				if(!sched.checkExists(trigger.getKey())){
+					println "---Trigger doesn't exist"
+					sched.scheduleJob(trigger)
+				}else{
+					println "---Trigger exists"
+					sched.unscheduleJob(trigger.getKey())
+					sched.scheduleJob(trigger)
+				}
 			}
-		}else{
-			
 		}
-		println "--Add trigger successfully"
+		println "--Process trigger successfully"
 	}
 	
 	def createTrigger(oTrg){
