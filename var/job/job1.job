@@ -1,0 +1,5 @@
+JOB = [name:"job1"]
+FETCHACTION = {
+	def now = new Date().format("yyyy-MM-dd HH:mm:ss")
+	return "[$now]This is job 1:"// + externalVariable
+}

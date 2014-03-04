@@ -24,12 +24,22 @@ import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 import org.quartz.SimpleScheduleBuilder;
 import org.codehaus.groovy.tools.RootLoader
+import org.wiperdog.directorywatcher.Listener
 
-class Terracotta_Prototype{
+class Terracotta_Prototype implements Listener{
 	def context
-	def rootloader
+	def shell
+	def dir
+	def interval = 5000
+	def sched
+	def helper
 	
-	def Terracotta_Prototype(){
+	def Terracotta_Prototype(shell1, ctx){
+		context = ctx
+		shell = shell1
+		MonitorJobConfigLoader configLoader = new MonitorJobConfigLoader(context)
+		def properties = configLoader.getProperties();
+		dir = properties.get(ResourceConstants.JOB_DIRECTORY)
 		try{
 			println "----------------------------------------------"
 			println "----------Terracotta + OGSI + Groovy----------"
@@ -50,27 +60,51 @@ class Terracotta_Prototype{
 			schedProp.setProperty("org.quartz.jobStore.class", "org.terracotta.quartz.TerracottaJobStore") 
 			schedProp.setProperty("org.quartz.jobStore.tcConfigUrl", "10.0.0.107:9510") 
 			sf.initialize(schedProp) 
-			def sched = sf.getScheduler()
+			sched = sf.getScheduler()
 			// ------/Init Quarzt scheduler programmatically------
-						
-			JobDetail job = JobBuilder.newJob(AJob1.class).withIdentity("job1").storeDurably(true).build()
-			sched.addJob(job, true);
-			def trigger = TriggerBuilder.newTrigger().forJob(job).startNow().withSchedule(new SimpleScheduleBuilder().repeatForever().withIntervalInSeconds(10)).build();
-			sched.scheduleJob(trigger)
 			println "--Start scheduler--"
 			sched.start();
 		} catch(Exception ex){
 			// println ex
 			ex.printStackTrace();
 		}
+		helper = new Helper(shell, sched)
 	}
-}
+	public boolean notifyAdded(File target) throws IOException {
+		return processFile(target);
+	}
 
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-class AJob1 implements Job{
-	@Override
-	public void execute(JobExecutionContext arg0) throws JobExecutionException {
-		println "Executing job..."
+	public boolean notifyDeleted(File target) throws IOException {
+		return false;
+	}
+
+	public boolean notifyModified(File target) throws IOException {
+		return processFile(target);
+	}
+	
+	public boolean filterFile(File file) {
+		return file.getName().endsWith(".job") || file.getName().endsWith(".cls") || file.getName().endsWith(".trg") || file.getName().endsWith(".instances");
+	}
+
+	public String getDirectory() {
+		return dir;
+	}
+	
+	public long getInterval() {
+		return interval;
+	}
+	
+	def processFile(file){
+		try{
+			if(file.getName().endsWith(".job")){
+				helper.processJob(file)
+			}
+			if(file.getName().endsWith(".trg")){
+				helper.processTrigger(file)
+			}
+		}catch(ex){
+			ex.printStackTrace()
+		}
+		return true
 	}
 }
