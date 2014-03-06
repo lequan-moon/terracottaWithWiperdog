@@ -40,6 +40,9 @@ class Terracotta_Prototype implements Listener{
 		MonitorJobConfigLoader configLoader = new MonitorJobConfigLoader(context)
 		def properties = configLoader.getProperties();
 		dir = properties.get(ResourceConstants.JOB_DIRECTORY)
+		shell.getClassLoader().loadClass("DefaultSender")
+		shell.getClassLoader().loadClass("MathFuncUltilities")
+		shell.getClassLoader().loadClass("CustomJob")
 		try{
 			println "----------------------------------------------"
 			println "----------Terracotta + OGSI + Groovy----------"
@@ -59,16 +62,23 @@ class Terracotta_Prototype implements Listener{
 			schedProp.setProperty("org.quartz.jobStore.misfireThreshold", "60000") 
 			schedProp.setProperty("org.quartz.jobStore.class", "org.terracotta.quartz.TerracottaJobStore") 
 			schedProp.setProperty("org.quartz.jobStore.tcConfigUrl", "10.0.0.107:9510") 
+			// schedProp.setProperty("org.quartz.scheduler.classLoadHelper.class", "org.quartz.simpl.LoadingLoaderClassLoadHelper")
 			sf.initialize(schedProp) 
 			sched = sf.getScheduler()
 			// ------/Init Quarzt scheduler programmatically------
+			Thread.currentThread().contextClassLoader = shell.getClassLoader()
 			println "--Start scheduler--"
 			sched.start();
+			
+			def helperCls = shell.getClassLoader().loadClass("Helper")
+			helper = helperCls.newInstance(shell, sched)
+			// helper = new Helper(shell, sched)
 		} catch(Exception ex){
 			// println ex
 			ex.printStackTrace();
 		}
-		helper = new Helper(shell, sched)
+		
+		
 	}
 	public boolean notifyAdded(File target) throws IOException {
 		return processFile(target);
